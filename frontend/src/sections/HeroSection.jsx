@@ -1,6 +1,7 @@
 // src/sections/HeroSection.jsx
 
 import { motion } from "framer-motion";
+import AnalyzeInput from "../components/AnalyzeInput";
 
 const HeroSection = () => {
   return (
@@ -40,17 +41,7 @@ const HeroSection = () => {
             </h1>
 
             {/* Input */}
-            <div className="mt-14 flex max-w-[900px] items-center border border-white/5 bg-[#080808]">
-              <input
-                type="text"
-                placeholder="Paste GitHub repository URL..."
-                className="mono flex-1 bg-transparent px-8 py-6 text-xs uppercase tracking-[0.18em] text-white outline-none placeholder:text-zinc-700"
-              />
-
-              <button className="mono border-l border-white/5 bg-[#f5d90a] px-10 py-6 text-xs uppercase tracking-[0.22em] text-black transition duration-300 hover:bg-white">
-                Analyze
-              </button>
-            </div>
+            <AnalyzeInput />
           </motion.div>
         </div>
       </div>
