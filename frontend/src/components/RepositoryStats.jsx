@@ -1,5 +1,3 @@
-// src/components/RepositoryStats.jsx
-
 import {
   Star,
   GitFork,
@@ -12,12 +10,12 @@ const RepositoryStats = ({ analysisData }) => {
     {
       icon: Star,
       label: "Stars",
-      value: analysisData?.stars || 0,
+      value: analysisData?.stars || "0",
     },
     {
       icon: GitFork,
       label: "Forks",
-      value: analysisData?.forks || 0,
+      value: analysisData?.forks || "0",
     },
     {
       icon: Code2,
@@ -32,24 +30,41 @@ const RepositoryStats = ({ analysisData }) => {
   ];
 
   return (
-    <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
-      {stats.map((stat) => {
+    <div className="grid border border-white/5 xl:grid-cols-4">
+      {stats.map((stat, index) => {
         const Icon = stat.icon;
 
         return (
           <div
             key={stat.label}
-            className="surface rounded-[28px] p-7"
+            className={`group relative overflow-hidden border-white/5 bg-[#080808] px-8 py-10 ${
+              index !== stats.length - 1
+                ? "border-b xl:border-b-0 xl:border-r"
+                : ""
+            }`}
           >
-            <div className="mb-8">
-              <Icon size={20} className="text-zinc-500" />
+            {/* Tiny corner accent */}
+            <div className="absolute left-0 top-0 h-[1px] w-10 bg-[#f5d90a]" />
+
+            {/* Icon */}
+            <div className="mb-10 flex items-center justify-between">
+              <Icon
+                size={20}
+                className="text-zinc-600 transition group-hover:text-[#f5d90a]"
+              />
+
+              <span className="mono text-xs uppercase tracking-[0.2em] text-zinc-700">
+                0{index + 1}
+              </span>
             </div>
 
-            <h3 className="text-3xl font-medium text-white">
+            {/* Value */}
+            <h2 className="text-5xl font-semibold tracking-[-0.05em] text-white">
               {stat.value}
-            </h3>
+            </h2>
 
-            <p className="mt-2 text-sm text-zinc-600">
+            {/* Label */}
+            <p className="mono mt-5 text-xs uppercase tracking-[0.2em] text-zinc-600">
               {stat.label}
             </p>
           </div>

@@ -7,7 +7,11 @@ const App = () => {
   return (
     <Routes>
       <Route path="/" element={<HomePage />} />
-      <Route path="/dashboard" element={<DashboardPage />} />
+
+      <Route
+        path="/dashboard"
+        element={<DashboardPage />}
+      />
     </Routes>
   );
 };
