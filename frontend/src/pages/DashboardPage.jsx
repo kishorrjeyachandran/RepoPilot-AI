@@ -1,28 +1,21 @@
+// src/pages/DashboardPage.jsx
+
 import Sidebar from "../components/Sidebar";
 import DashboardTabs from "../components/DashboardTabs";
 import AIChatPanel from "../components/AIChatPanel";
-import { useState } from "react";
+
 import { useAnalysis } from "../context/AnalysisContext";
-import FileExplanationPanel from "../components/FileExplanationPanel";
 
 const DashboardPage = () => {
   const { analysisData } = useAnalysis();
-  console.log(analysisData);
-  const [selectedFile, setSelectedFile] = useState(null);
+
   return (
-    <main className="flex min-h-screen bg-[#0d1117] text-white">
-      <Sidebar
-  selectedFile={selectedFile}
-  setSelectedFile={setSelectedFile}
-/>
+    <main className="flex min-h-screen bg-[#08090a] text-white">
+      <Sidebar analysisData={analysisData} />
 
-      <div className="flex-1 overflow-y-auto">
-  <DashboardTabs />
-
-  <div className="px-8 pb-10">
-    <FileExplanationPanel selectedFile={selectedFile} />
-  </div>
-</div>
+      <div className="flex-1 overflow-y-auto px-8 py-8">
+        <DashboardTabs analysisData={analysisData} />
+      </div>
 
       <AIChatPanel />
     </main>

@@ -1,8 +1,10 @@
+// src/components/RepositoryStats.jsx
+
 import {
   Star,
   GitFork,
-  Eye,
-  Clock3,
+  Code2,
+  User2,
 } from "lucide-react";
 
 const RepositoryStats = ({ analysisData }) => {
@@ -18,12 +20,12 @@ const RepositoryStats = ({ analysisData }) => {
       value: analysisData?.forks || 0,
     },
     {
-      icon: Eye,
+      icon: Code2,
       label: "Language",
       value: analysisData?.language || "Unknown",
     },
     {
-      icon: Clock3,
+      icon: User2,
       label: "Owner",
       value: analysisData?.owner || "Unknown",
     },
@@ -37,17 +39,17 @@ const RepositoryStats = ({ analysisData }) => {
         return (
           <div
             key={stat.label}
-            className="rounded-2xl border border-[#21262d] bg-[#161b22]/60 p-5 transition hover:border-blue-500/40 hover:shadow-[0_0_30px_rgba(59,130,246,0.08)]"
+            className="surface rounded-[28px] p-7"
           >
-            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl border border-[#30363d] bg-[#0d1117]">
-              <Icon className="text-blue-400" size={20} />
+            <div className="mb-8">
+              <Icon size={20} className="text-zinc-500" />
             </div>
 
-            <h3 className="mb-1 text-2xl font-bold">
+            <h3 className="text-3xl font-medium text-white">
               {stat.value}
             </h3>
 
-            <p className="text-sm text-[#8b949e]">
+            <p className="mt-2 text-sm text-zinc-600">
               {stat.label}
             </p>
           </div>

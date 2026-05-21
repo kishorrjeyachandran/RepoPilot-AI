@@ -1,33 +1,27 @@
-import { GitBranch } from "lucide-react";
+// src/components/Navbar.jsx
+
 import { motion } from "framer-motion";
 
 const Navbar = () => {
   return (
     <motion.header
-      initial={{ y: -40, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      transition={{ duration: 0.5 }}
-      className="sticky top-0 z-50 border-b border-[#21262d] bg-[#0d1117]/80 backdrop-blur-xl"
+      initial={{ opacity: 0, y: -15 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="sticky top-0 z-50"
     >
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-        <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[#30363d] bg-[#161b22]">
-            <GitBranch className="text-blue-400" size={22} />
-          </div>
+      <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-6">
+        <div>
+          <h1 className="text-lg font-medium tracking-tight text-white">
+            RepoPilot AI
+          </h1>
 
-          <div>
-            <h1 className="text-lg font-semibold text-white">
-              RepoPilot AI
-            </h1>
-
-            <p className="text-xs text-[#8b949e]">
-              AI Repository Intelligence
-            </p>
-          </div>
+          <p className="mt-1 text-sm text-zinc-500">
+            AI Repository Workspace
+          </p>
         </div>
 
-        <button className="rounded-xl border border-[#30363d] bg-[#161b22] px-5 py-2 text-sm font-medium text-white transition hover:border-blue-500">
-          GitHub
+        <button className="rounded-2xl border border-white/5 bg-white/[0.03] px-5 py-3 text-sm text-zinc-300 transition hover:bg-white/[0.05] hover:text-white">
+          Dashboard
         </button>
       </div>
     </motion.header>

@@ -1,18 +1,79 @@
+/* src/index.css */
+
 @import "tailwindcss";
 
 :root {
   color-scheme: dark;
+
+  --bg: #08090a;
+  --surface: #111214;
+  --surface-light: #17181c;
+
+  --border: rgba(255, 255, 255, 0.06);
+
+  --text: #fafafa;
+  --muted: #8b8d98;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
-  background: #0d1117;
-  color: #f0f6fc;
+
+  background: var(--bg);
+  color: var(--text);
+
   font-family: Inter, sans-serif;
+
+  overflow-x: hidden;
+
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 * {
   box-sizing: border-box;
+}
+
+::selection {
+  background: rgba(255,255,255,0.12);
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.08);
+  border-radius: 999px;
+}
+
+.surface {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.05);
+}
+
+.surface-hover {
+  transition: all 0.25s ease;
+}
+
+.surface-hover:hover {
+  background: rgba(255,255,255,0.045);
+}
+
+.text-muted {
+  color: var(--muted);
+}
+
+.hero-gradient {
+  background:
+    radial-gradient(
+      circle at top,
+      rgba(255,255,255,0.06),
+      transparent 40%
+    );
 }

@@ -1,138 +1,70 @@
-import { useState } from "react";
+// src/components/DashboardTabs.jsx
 
 import RepositoryStats from "./RepositoryStats";
-import ImprovementsSection from "./ImprovementsSection";
-import ReadmePreview from "./ReadmePreview";
-import ArchitectureSection from "./ArchitectureSection";
-
-import FadeWrapper from "../animations/FadeWrapper";
-
-const tabs = [
-  "Overview",
-  "README",
-  "Architecture",
-  "Improvements",
-];
 
 const DashboardTabs = ({ analysisData }) => {
-  const [activeTab, setActiveTab] = useState("Overview");
-
   return (
-    <div className="h-screen overflow-y-auto">
-      <div className="sticky top-0 z-20 border-b border-[#21262d] bg-[#0d1117]/90 backdrop-blur-xl">
-        <div className="flex gap-3 overflow-x-auto px-6 py-5">
-          {tabs.map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`rounded-xl px-4 py-2 text-sm transition ${
-                activeTab === tab
-                  ? "bg-blue-600 text-white"
-                  : "bg-[#161b22] text-[#8b949e]"
-              }`}
-            >
-              {tab}
-            </button>
-          ))}
-        </div>
+    <div className="mx-auto max-w-6xl">
+      {/* Hero */}
+      <div className="surface rounded-[40px] p-10 md:p-14">
+        <p className="mb-5 text-sm uppercase tracking-[0.25em] text-zinc-600">
+          Repository Analysis
+        </p>
+
+        <h1 className="max-w-4xl text-5xl font-medium leading-tight tracking-tight text-white md:text-7xl">
+          {analysisData?.name || "Repository"}
+        </h1>
+
+        <p className="mt-8 max-w-3xl text-lg leading-relaxed text-zinc-500">
+          {analysisData?.description ||
+            "AI-generated repository architecture and development insights."}
+        </p>
       </div>
 
-      <div className="space-y-8 p-8">
-        {/* Overview Header */}
-        <div className="rounded-3xl border border-[#21262d] bg-[#161b22]/60 p-8">
-          <div className="flex items-center gap-5">
-            {analysisData?.avatar && (
-              <img
-                src={analysisData.avatar}
-                alt={analysisData.owner}
-                className="h-20 w-20 rounded-2xl border border-[#30363d]"
-              />
-            )}
+      {/* Stats */}
+      <div className="mt-6">
+        <RepositoryStats analysisData={analysisData} />
+      </div>
 
-            <div>
-              <h1 className="mb-2 text-4xl font-bold">
-                {analysisData?.name || "Repository"}
-              </h1>
+      {/* Sections */}
+      <div className="mt-6 grid gap-6 xl:grid-cols-2">
+        <div className="surface rounded-[32px] p-8">
+          <p className="mb-4 text-sm uppercase tracking-[0.2em] text-zinc-600">
+            Overview
+          </p>
 
-              <p className="text-[#8b949e]">
-                {analysisData?.owner || "Unknown Owner"}
-              </p>
-            </div>
-          </div>
+          <h2 className="text-3xl font-medium text-white">
+            Repository Architecture
+          </h2>
 
-          <p className="mt-6 max-w-4xl leading-relaxed text-[#c9d1d9]">
-            {analysisData?.description ||
-              "No repository description available."}
+          <p className="mt-6 leading-relaxed text-zinc-500">
+            This repository follows a scalable development structure
+            with reusable modules, modern tooling, and production-ready
+            engineering practices.
           </p>
         </div>
 
-        {/* Stats */}
-        <FadeWrapper>
-          <RepositoryStats analysisData={analysisData} />
-        </FadeWrapper>
+        <div className="surface rounded-[32px] p-8">
+          <p className="mb-4 text-sm uppercase tracking-[0.2em] text-zinc-600">
+            AI Insights
+          </p>
 
-        {/* README */}
-        {activeTab === "README" && (
-          <FadeWrapper>
-            <ReadmePreview />
-          </FadeWrapper>
-        )}
-
-        {/* Architecture */}
-        {activeTab === "Architecture" && (
-          <FadeWrapper>
-            <ArchitectureSection />
-          </FadeWrapper>
-        )}
-
-        {/* Improvements */}
-        {activeTab === "Improvements" && (
-          <FadeWrapper>
-            <ImprovementsSection />
-          </FadeWrapper>
-        )}
-
-        {/* Overview */}
-        {activeTab === "Overview" && (
-          <FadeWrapper>
-            <div className="grid gap-6 xl:grid-cols-2">
-              <div className="rounded-3xl border border-[#21262d] bg-[#161b22]/60 p-6">
-                <h2 className="mb-4 text-2xl font-semibold">
-                  Key Technologies
-                </h2>
-
-                <div className="flex flex-wrap gap-3">
-                  {[
-                    analysisData?.language || "Unknown",
-                    "GitHub API",
-                    "AI Analysis",
-                    "Repository Insights",
-                  ].map((tech) => (
-                    <span
-                      key={tech}
-                      className="rounded-xl border border-[#30363d] bg-[#0d1117] px-4 py-2"
-                    >
-                      {tech}
-                    </span>
-                  ))}
-                </div>
+          <div className="space-y-4">
+            {[
+              "Modern scalable architecture identified",
+              "Reusable component structure detected",
+              "Production-oriented repository setup",
+              "Strong developer tooling integration",
+            ].map((item) => (
+              <div
+                key={item}
+                className="rounded-2xl bg-white/[0.03] p-4 text-zinc-400"
+              >
+                {item}
               </div>
-
-              <div className="rounded-3xl border border-[#21262d] bg-[#161b22]/60 p-6">
-                <h2 className="mb-4 text-2xl font-semibold">
-                  AI Insights
-                </h2>
-
-                <ul className="space-y-3 text-[#c9d1d9]">
-                  <li>• Repository structure successfully analyzed</li>
-                  <li>• GitHub metadata extracted dynamically</li>
-                  <li>• AI-ready repository context prepared</li>
-                  <li>• Scalable repository architecture detected</li>
-                </ul>
-              </div>
-            </div>
-          </FadeWrapper>
-        )}
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );

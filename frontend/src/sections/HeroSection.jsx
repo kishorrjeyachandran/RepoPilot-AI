@@ -1,85 +1,74 @@
+// src/sections/HeroSection.jsx
+
 import { motion } from "framer-motion";
-import { useState } from "react";
-import AnalysisLoader from "../components/AnalysisLoader";
-import AIWorkflow from "../components/AIWorkflow";
-import { useNavigate } from "react-router-dom";
-import { analyzeRepository } from "../services/githubService";
-import { useAnalysis } from "../context/AnalysisContext";
+import { ArrowRight } from "lucide-react";
 
 const HeroSection = () => {
-  const [loading, setLoading] = useState(false);
-  const { setAnalysisData } = useAnalysis();
-  const [repoUrl, setRepoUrl] = useState("");
-  const navigate = useNavigate();
-  const handleAnalyze = async () => {
-  if (!repoUrl.trim()) return;
-
-  try {
-    setLoading(true);
-
-    const data = await analyzeRepository(repoUrl);
-
-    setAnalysisData(data.data);
-
-    setTimeout(() => {
-      navigate("/dashboard");
-    }, 3000);
-  } catch (error) {
-    console.error(error);
-  }
-};
-
   return (
-    <>
-  {loading && <AnalysisLoader />}
-    <section className="relative flex min-h-screen items-center justify-center px-6">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,#1f29371a,transparent_70%)]" />
+    <section className="hero-gradient relative flex min-h-screen items-center px-6">
+      <div className="mx-auto max-w-6xl">
+        <motion.div
+          initial={{ opacity: 0, y: 25 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+        >
+          <p className="mb-6 text-sm uppercase tracking-[0.25em] text-zinc-500">
+            AI Repository Intelligence
+          </p>
 
-      <motion.div
-        initial={{ opacity: 0, y: 40 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.7 }}
-        className="relative z-10 mx-auto max-w-4xl text-center"
-      >
-        <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-[#30363d] bg-[#161b22] px-4 py-2 text-sm text-[#8b949e]">
-          <span className="h-2 w-2 rounded-full bg-green-500" />
-          AI-Powered Repository Intelligence
-        </div>
+          <h1 className="max-w-5xl text-6xl font-medium leading-[0.95] tracking-tight text-white md:text-8xl">
+            Understand repositories
+            <br />
+            with clarity.
+          </h1>
 
-        <h1 className="mb-6 text-5xl font-bold leading-tight tracking-tight md:text-7xl">
-          Navigate Any
-          <span className="bg-gradient-to-r from-blue-500 to-cyan-400 bg-clip-text text-transparent">
-            {" "}GitHub Repository{" "}
-          </span>
-          with AI
-        </h1>
+          <p className="mt-10 max-w-2xl text-lg leading-relaxed text-zinc-500 md:text-xl">
+            RepoPilot AI transforms GitHub repositories into
+            structured architecture insights, intelligent explanations,
+            and production-level analysis.
+          </p>
 
-        <p className="mx-auto mb-10 max-w-2xl text-lg leading-relaxed text-[#8b949e] md:text-xl">
-          RepoPilot AI analyzes public repositories and generates
-          intelligent explanations, architecture insights, README
-          documentation, and production-level improvements instantly.
-        </p>
+          {/* Input */}
+          <div className="mt-14 flex max-w-3xl flex-col gap-4 rounded-[32px] border border-white/5 bg-white/[0.03] p-4 backdrop-blur-xl md:flex-row">
+            <input
+              type="text"
+              placeholder="Paste GitHub repository URL..."
+              className="flex-1 bg-transparent px-5 py-5 text-lg text-white outline-none placeholder:text-zinc-600"
+            />
 
-        <div className="mx-auto flex max-w-2xl flex-col gap-4 rounded-2xl border border-[#30363d] bg-[#161b22]/80 p-4 backdrop-blur-xl md:flex-row">
-          <input
-  type="text"
-  placeholder="Paste GitHub repository URL..."
-  value={repoUrl}
-  onChange={(e) => setRepoUrl(e.target.value)}
-  className="flex-1 rounded-xl border border-[#30363d] bg-[#0d1117] px-5 py-4 text-white outline-none transition focus:border-blue-500"
-/>
-          
-          <button
-  onClick={handleAnalyze}
-  className="rounded-xl bg-blue-600 px-6 py-4 font-medium transition hover:bg-blue-500"
->
-  Analyze Repository
-</button>
-        </div>
-        <AIWorkflow />
-      </motion.div>
+            <button className="flex items-center justify-center gap-2 rounded-[24px] bg-white px-8 py-5 text-sm font-medium text-black transition hover:opacity-90">
+              Analyze Repository
+              <ArrowRight size={18} />
+            </button>
+          </div>
+
+          {/* Minimal Preview */}
+          <div className="mt-24 grid gap-5 md:grid-cols-3">
+            {[
+              "Architecture Understanding",
+              "Repository Intelligence",
+              "AI Code Explanations",
+            ].map((item) => (
+              <div
+                key={item}
+                className="surface surface-hover rounded-[32px] p-8"
+              >
+                <div className="mb-10 h-[1px] w-12 bg-white/10" />
+
+                <h3 className="text-xl font-medium text-white">
+                  {item}
+                </h3>
+
+                <p className="mt-4 leading-relaxed text-zinc-500">
+                  Advanced AI-powered repository analysis designed
+                  for modern developers and teams.
+                </p>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+      </div>
     </section>
-    </>
   );
 };
 
