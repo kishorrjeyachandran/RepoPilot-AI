@@ -1,87 +1,148 @@
 import { useLocation } from "react-router-dom";
-import MainLayout from "../layouts/MainLayout";
+import { motion } from "framer-motion";
+
+import DashboardLayout from "../layouts/DashboardLayout";
 
 const DashboardPage = () => {
   const location = useLocation();
 
-  const repoUrl =
-    location.state?.repoUrl ||
-    "https://github.com/vercel/next.js";
+  const repoData = location.state?.repoData;
+
+  if (!repoData) {
+    return null;
+  }
 
   return (
-    <MainLayout>
-      <section className="px-8 pt-44 pb-20">
-        <div className="mx-auto max-w-[1600px]">
-          {/* Repo URL */}
-          <div className="mono mb-10 text-xs uppercase tracking-[0.22em] text-zinc-600">
-            {repoUrl}
+    <DashboardLayout>
+      <section className="min-h-screen bg-[#050505] px-10 py-10">
+        <motion.div
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="border border-white/5 bg-[#080808]"
+        >
+          {/* Header */}
+          <div className="border-b border-white/5 px-8 py-8">
+            <p className="mono text-xs uppercase tracking-[0.22em] text-zinc-600">
+              Repository Analysis
+            </p>
+
+            <h1 className="mt-5 text-5xl font-medium tracking-tight text-white">
+              {repoData.name}
+            </h1>
+
+            <p className="mt-4 max-w-2xl text-zinc-500">
+              {repoData.description}
+            </p>
           </div>
 
-          {/* Heading */}
-          <h1 className="max-w-5xl text-5xl font-medium leading-[0.92] tracking-[-0.08em] text-white md:text-[5rem]">
-            Repository
-            <br />
-            intelligence dashboard.
-          </h1>
+          {/* Stats */}
+          <div className="grid border-b border-white/5 md:grid-cols-4">
+            {[
+              ["Stars", repoData.stars],
+              ["Forks", repoData.forks],
+              ["Language", repoData.language],
+              ["Owner", repoData.owner],
+            ].map(([k, v]) => (
+              <div
+                key={k}
+                className="border-r border-white/5 px-8 py-7 last:border-r-0"
+              >
+                <p className="mono text-[10px] uppercase tracking-[0.18em] text-zinc-700">
+                  {k}
+                </p>
 
-          {/* Grid */}
-          <div className="mt-20 grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-            {/* Left */}
-            <div className="space-y-6">
-              {/* Summary */}
-              <div className="border border-white/5 bg-[#080808] p-8">
-                <div className="mono mb-6 text-xs uppercase tracking-[0.22em] text-zinc-600">
-                  README SUMMARY
-                </div>
-
-                <p className="max-w-3xl text-lg leading-relaxed text-zinc-400">
-                  This repository contains a modern full-stack
-                  framework with routing, rendering, server-side
-                  capabilities, optimized bundling and scalable
-                  architecture patterns.
+                <p className="mt-4 text-2xl text-white">
+                  {v}
                 </p>
               </div>
+            ))}
+          </div>
 
-              {/* Architecture */}
-              <div className="border border-white/5 bg-[#080808] p-8">
-                <div className="mono mb-10 text-xs uppercase tracking-[0.22em] text-zinc-600">
-                  ARCHITECTURE
+          {/* Main Grid */}
+          <div className="grid gap-6 p-8 xl:grid-cols-[1.2fr_0.8fr]">
+            {/* LEFT */}
+            <div className="space-y-6">
+              {/* AI Analysis */}
+              <div className="border border-white/5 bg-black p-8">
+                <p className="mono mb-6 text-xs uppercase tracking-[0.22em] text-zinc-600">
+                  AI ANALYSIS
+                </p>
+
+                <div className="whitespace-pre-wrap leading-relaxed text-zinc-400">
+                  {repoData.aiAnalysis}
+                </div>
+              </div>
+
+              {/* Terminal */}
+              <div className="border border-white/5 bg-black">
+                {/* Terminal Header */}
+                <div className="flex items-center gap-2 border-b border-white/5 px-5 py-4">
+                  <div className="h-2 w-2 rounded-full bg-zinc-700" />
+                  <div className="h-2 w-2 rounded-full bg-zinc-700" />
+                  <div className="h-2 w-2 rounded-full bg-zinc-700" />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                {/* Terminal Body */}
+                <div className="space-y-5 p-7">
                   {[
-                    "Frontend",
-                    "Backend",
-                    "Routing",
-                    "Rendering",
-                    "Compiler",
-                    "API",
-                  ].map((item) => (
-                    <div
-                      key={item}
-                      className="mono border border-white/5 bg-black px-5 py-5 text-xs uppercase tracking-[0.18em] text-zinc-400"
+                    "Repository parsed successfully.",
+                    "README analyzed.",
+                    "Architecture generated.",
+                    "AI insights completed.",
+                  ].map((line, index) => (
+                    <motion.div
+                      key={line}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{
+                        delay: index * 0.2,
+                      }}
+                      className="mono flex items-center gap-4 text-sm uppercase tracking-[0.18em] text-zinc-500"
                     >
-                      {item}
-                    </div>
+                      <span className="text-[#f5d90a]">
+                        {">"}
+                      </span>
+
+                      <span>{line}</span>
+                    </motion.div>
                   ))}
                 </div>
               </div>
             </div>
 
-            {/* Right */}
+            {/* RIGHT */}
             <div className="space-y-6">
-              {/* AI Insights */}
-              <div className="border border-white/5 bg-[#080808] p-8">
-                <div className="mono mb-8 text-xs uppercase tracking-[0.22em] text-zinc-600">
-                  AI INSIGHTS
+              {/* Languages */}
+              <div className="border border-white/5 bg-black p-8">
+                <p className="mono mb-6 text-xs uppercase tracking-[0.22em] text-zinc-600">
+                  Languages
+                </p>
+
+                <div className="flex flex-wrap gap-3">
+                  {repoData.languages.map((lang) => (
+                    <div
+                      key={lang}
+                      className="mono border border-white/5 px-5 py-3 text-xs uppercase tracking-[0.18em] text-zinc-400"
+                    >
+                      {lang}
+                    </div>
+                  ))}
                 </div>
+              </div>
+
+              {/* AI Insights */}
+              <div className="border border-white/5 bg-black p-8">
+                <p className="mono mb-6 text-xs uppercase tracking-[0.22em] text-zinc-600">
+                  AI INSIGHTS
+                </p>
 
                 <div className="space-y-5">
                   {[
-                    "Well-structured modular architecture.",
-                    "High scalability potential.",
-                    "Strong routing abstraction.",
-                    "Modern developer experience.",
+                    "Scalable repository structure detected.",
+                    "Modern development workflow identified.",
+                    "Strong component architecture.",
+                    "Production-ready engineering practices.",
                   ].map((item) => (
                     <div
                       key={item}
@@ -97,35 +158,26 @@ const DashboardPage = () => {
                 </div>
               </div>
 
-              {/* Tech Stack */}
-              <div className="border border-white/5 bg-[#080808] p-8">
-                <div className="mono mb-8 text-xs uppercase tracking-[0.22em] text-zinc-600">
-                  TECH STACK
-                </div>
+              {/* Repo Link */}
+              <div className="border border-white/5 bg-black p-8">
+                <p className="mono mb-6 text-xs uppercase tracking-[0.22em] text-zinc-600">
+                  SOURCE
+                </p>
 
-                <div className="flex flex-wrap gap-3">
-                  {[
-                    "React",
-                    "TypeScript",
-                    "Node",
-                    "Webpack",
-                    "Rust",
-                    "CSS",
-                  ].map((tech) => (
-                    <div
-                      key={tech}
-                      className="mono border border-white/5 px-4 py-3 text-xs uppercase tracking-[0.18em] text-zinc-400"
-                    >
-                      {tech}
-                    </div>
-                  ))}
-                </div>
+                <a
+                  href={repoData.repoUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mono break-all text-sm uppercase tracking-[0.18em] text-[#f5d90a]"
+                >
+                  {repoData.repoUrl}
+                </a>
               </div>
             </div>
           </div>
-        </div>
+        </motion.div>
       </section>
-    </MainLayout>
+    </DashboardLayout>
   );
 };
 

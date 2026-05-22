@@ -9,18 +9,37 @@ const AnalyzeInput = () => {
   const navigate = useNavigate();
 
   const handleAnalyze = async () => {
-    if (!repoUrl.trim()) return;
+  if (!repoUrl.trim()) return;
 
+  try {
     setLoading(true);
 
-    setTimeout(() => {
-      navigate("/dashboard", {
-        state: {
-          repoUrl,
+    const res = await fetch(
+      "http://localhost:5000/api/github/analyze",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
         },
-      });
-    }, 1800);
-  };
+        body: JSON.stringify({
+          repoUrl,
+        }),
+      }
+    );
+
+    const data = await res.json();
+
+    navigate("/dashboard", {
+      state: {
+        repoData: data,
+      },
+    });
+  } catch (error) {
+    console.log(error);
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleKeyDown = (e) => {
     if (e.key === "Enter") {
