@@ -1,6 +1,7 @@
 import express from "express";
 import axios from "axios";
 import OpenAI from "openai";
+import RepositorySession from "../models/RepositorySession.js";
 
 const router = express.Router();
 
@@ -12,7 +13,7 @@ router.post("/analyze", async (req, res) => {
   try {
     const { repoUrl } = req.body;
 
-    // Parse GitHub URL
+    // Parse URL
     const parts = repoUrl
       .replace("https://github.com/", "")
       .split("/");
@@ -29,17 +30,6 @@ router.post("/analyze", async (req, res) => {
     const langRes = await axios.get(
       `https://api.github.com/repos/${owner}/${repo}/languages`
     );
-
-    const treeRes = await axios.get(
-  `https://api.github.com/repos/${owner}/${repo}/git/trees/main?recursive=1`
-);
-
-const fileTree = treeRes.data.tree
-  .slice(0, 80)
-  .map((item) => ({
-    path: item.path,
-    type: item.type,
-  }));
 
     // README
     let readmeText = "";
@@ -67,17 +57,17 @@ const fileTree = treeRes.data.tree
       packageJson = {};
     }
 
-    // DETECT FRAMEWORKS
+    // Dependencies
     const dependencies = {
-      
       ...(packageJson.dependencies || {}),
       ...(packageJson.devDependencies || {}),
     };
 
     const dependencyList = Object.keys(
-  dependencies
-).slice(0, 40);
+      dependencies
+    ).slice(0, 40);
 
+    // Framework Detection
     const detectedFrameworks = [];
 
     if (dependencies.react)
@@ -101,7 +91,25 @@ const fileTree = treeRes.data.tree
     if (dependencies.typescript)
       detectedFrameworks.push("TypeScript");
 
-    // AI ANALYSIS
+    // File Tree
+    let fileTree = [];
+
+    try {
+      const treeRes = await axios.get(
+        `https://api.github.com/repos/${owner}/${repo}/git/trees/main?recursive=1`
+      );
+
+      fileTree = treeRes.data.tree
+        .slice(0, 80)
+        .map((item) => ({
+          path: item.path,
+          type: item.type,
+        }));
+    } catch {
+      fileTree = [];
+    }
+
+    // AI Analysis
     const completion =
       await openai.chat.completions.create({
         model: "gpt-4.1-mini",
@@ -125,8 +133,11 @@ ${repoRes.data.description}
 Languages:
 ${Object.keys(langRes.data).join(", ")}
 
-Detected Frameworks:
+Frameworks:
 ${detectedFrameworks.join(", ")}
+
+Dependencies:
+${dependencyList.join(", ")}
 
 README:
 ${readmeText}
@@ -145,7 +156,35 @@ Analyze this repository and provide:
     const aiAnalysis =
       completion.choices[0].message.content;
 
-    // RESPONSE
+      const session =
+  await RepositorySession.create({
+    repoName: repoRes.data.name,
+
+    repoUrl,
+
+    repoData: {
+      name: repoRes.data.name,
+      description: repoRes.data.description,
+      stars: repoRes.data.stargazers_count,
+      forks: repoRes.data.forks_count,
+      language: repoRes.data.language,
+      owner: repoRes.data.owner.login,
+
+      languages: Object.keys(langRes.data),
+
+      frameworks: detectedFrameworks,
+
+      dependencies: dependencyList,
+
+      fileTree,
+
+      aiAnalysis,
+    },
+
+    chatHistory: [],
+  });
+
+    // Response
     res.json({
       name: repoRes.data.name,
       description: repoRes.data.description,
@@ -153,11 +192,18 @@ Analyze this repository and provide:
       forks: repoRes.data.forks_count,
       language: repoRes.data.language,
       owner: repoRes.data.owner.login,
+
       languages: Object.keys(langRes.data),
+
       frameworks: detectedFrameworks,
-      repoUrl,
-      fileTree,
+
       dependencies: dependencyList,
+
+      fileTree,
+
+      repoUrl,
+
+      sessionId: session._id,
 
       aiAnalysis,
     });

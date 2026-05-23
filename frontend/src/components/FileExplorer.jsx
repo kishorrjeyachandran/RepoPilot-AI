@@ -3,7 +3,10 @@ import {
   FileCode,
 } from "lucide-react";
 
-const FileExplorer = ({ fileTree }) => {
+const FileExplorer = ({
+  fileTree,
+  onFileSelect,
+}) => {
   return (
     <div className="border border-white/5 bg-black">
       {/* Header */}
@@ -14,12 +17,16 @@ const FileExplorer = ({ fileTree }) => {
       </div>
 
       {/* Files */}
-      <div className="max-h-[600px] overflow-y-auto p-4">
+      <div className="max-h-[500px] overflow-y-auto p-4">
         <div className="space-y-1">
           {fileTree?.map((file, index) => (
-            <div
+            <button
               key={`${file.path}-${index}`}
-              className="mono flex items-center gap-3 rounded-md border border-transparent px-4 py-3 text-xs uppercase tracking-[0.15em] text-zinc-500 transition hover:border-white/5 hover:bg-white/[0.02]"
+              onClick={() =>
+                file.type === "blob" &&
+                onFileSelect(file.path)
+              }
+              className="mono flex w-full items-center gap-3 rounded-md border border-transparent px-4 py-3 text-left text-xs uppercase tracking-[0.15em] text-zinc-500 transition hover:border-white/5 hover:bg-white/[0.02]"
             >
               {file.type === "tree" ? (
                 <Folder size={15} />
@@ -30,7 +37,7 @@ const FileExplorer = ({ fileTree }) => {
               <span className="truncate">
                 {file.path}
               </span>
-            </div>
+            </button>
           ))}
         </div>
       </div>
