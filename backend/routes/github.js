@@ -30,6 +30,17 @@ router.post("/analyze", async (req, res) => {
       `https://api.github.com/repos/${owner}/${repo}/languages`
     );
 
+    const treeRes = await axios.get(
+  `https://api.github.com/repos/${owner}/${repo}/git/trees/main?recursive=1`
+);
+
+const fileTree = treeRes.data.tree
+  .slice(0, 80)
+  .map((item) => ({
+    path: item.path,
+    type: item.type,
+  }));
+
     // README
     let readmeText = "";
 
@@ -43,7 +54,54 @@ router.post("/analyze", async (req, res) => {
       readmeText = "README not found.";
     }
 
-    // AI Analysis
+    // PACKAGE.JSON
+    let packageJson = {};
+
+    try {
+      const packageRes = await axios.get(
+        `https://raw.githubusercontent.com/${owner}/${repo}/main/package.json`
+      );
+
+      packageJson = packageRes.data;
+    } catch {
+      packageJson = {};
+    }
+
+    // DETECT FRAMEWORKS
+    const dependencies = {
+      
+      ...(packageJson.dependencies || {}),
+      ...(packageJson.devDependencies || {}),
+    };
+
+    const dependencyList = Object.keys(
+  dependencies
+).slice(0, 40);
+
+    const detectedFrameworks = [];
+
+    if (dependencies.react)
+      detectedFrameworks.push("React");
+
+    if (dependencies.next)
+      detectedFrameworks.push("Next.js");
+
+    if (dependencies.vue)
+      detectedFrameworks.push("Vue");
+
+    if (dependencies.express)
+      detectedFrameworks.push("Express");
+
+    if (dependencies.tailwindcss)
+      detectedFrameworks.push("Tailwind");
+
+    if (dependencies.mongodb)
+      detectedFrameworks.push("MongoDB");
+
+    if (dependencies.typescript)
+      detectedFrameworks.push("TypeScript");
+
+    // AI ANALYSIS
     const completion =
       await openai.chat.completions.create({
         model: "gpt-4.1-mini",
@@ -67,6 +125,9 @@ ${repoRes.data.description}
 Languages:
 ${Object.keys(langRes.data).join(", ")}
 
+Detected Frameworks:
+${detectedFrameworks.join(", ")}
+
 README:
 ${readmeText}
 
@@ -84,7 +145,7 @@ Analyze this repository and provide:
     const aiAnalysis =
       completion.choices[0].message.content;
 
-    // Response
+    // RESPONSE
     res.json({
       name: repoRes.data.name,
       description: repoRes.data.description,
@@ -93,7 +154,10 @@ Analyze this repository and provide:
       language: repoRes.data.language,
       owner: repoRes.data.owner.login,
       languages: Object.keys(langRes.data),
+      frameworks: detectedFrameworks,
       repoUrl,
+      fileTree,
+      dependencies: dependencyList,
 
       aiAnalysis,
     });

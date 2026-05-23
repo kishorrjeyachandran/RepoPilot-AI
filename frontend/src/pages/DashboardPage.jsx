@@ -2,6 +2,9 @@ import { useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 
 import DashboardLayout from "../layouts/DashboardLayout";
+import FileExplorer from "../components/FileExplorer";
+import ArchitectureMap from "../components/ArchitectureMap";
+import DependencyGraph from "../components/DependencyGraph";
 
 const DashboardPage = () => {
   const location = useLocation();
@@ -9,7 +12,15 @@ const DashboardPage = () => {
   const repoData = location.state?.repoData;
 
   if (!repoData) {
-    return null;
+    return (
+      <DashboardLayout>
+        <div className="flex min-h-screen items-center justify-center bg-[#050505]">
+          <p className="mono text-sm uppercase tracking-[0.22em] text-zinc-600">
+            No repository data found.
+          </p>
+        </div>
+      </DashboardLayout>
+    );
   }
 
   return (
@@ -19,7 +30,7 @@ const DashboardPage = () => {
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="border border-white/5 bg-[#080808]"
+          className="overflow-hidden border border-white/5 bg-[#080808]"
         >
           {/* Header */}
           <div className="border-b border-white/5 px-8 py-8">
@@ -31,8 +42,8 @@ const DashboardPage = () => {
               {repoData.name}
             </h1>
 
-            <p className="mt-4 max-w-2xl text-zinc-500">
-              {repoData.description}
+            <p className="mt-4 max-w-2xl leading-relaxed text-zinc-500">
+              {repoData.description || "No description available."}
             </p>
           </div>
 
@@ -52,8 +63,8 @@ const DashboardPage = () => {
                   {k}
                 </p>
 
-                <p className="mt-4 text-2xl text-white">
-                  {v}
+                <p className="mt-4 text-2xl font-medium text-white">
+                  {v || "N/A"}
                 </p>
               </div>
             ))}
@@ -62,65 +73,76 @@ const DashboardPage = () => {
           {/* Main Grid */}
           <div className="grid gap-6 p-8 xl:grid-cols-[1.2fr_0.8fr]">
             {/* LEFT */}
-            <div className="space-y-6">
-              {/* AI Analysis */}
-              <div className="border border-white/5 bg-black p-8">
-                <p className="mono mb-6 text-xs uppercase tracking-[0.22em] text-zinc-600">
-                  AI ANALYSIS
-                </p>
+<div className="space-y-6">
+  {/* AI Analysis */}
+  <div className="border border-white/5 bg-black p-8">
+    <p className="mono mb-6 text-xs uppercase tracking-[0.22em] text-zinc-600">
+      AI ANALYSIS
+    </p>
 
-                <div className="whitespace-pre-wrap leading-relaxed text-zinc-400">
-                  {repoData.aiAnalysis}
-                </div>
-              </div>
+    <div className="whitespace-pre-wrap leading-relaxed text-zinc-400">
+      {repoData.aiAnalysis ||
+        "AI analysis unavailable."}
+    </div>
+  </div>
 
-              {/* Terminal */}
-              <div className="border border-white/5 bg-black">
-                {/* Terminal Header */}
-                <div className="flex items-center gap-2 border-b border-white/5 px-5 py-4">
-                  <div className="h-2 w-2 rounded-full bg-zinc-700" />
-                  <div className="h-2 w-2 rounded-full bg-zinc-700" />
-                  <div className="h-2 w-2 rounded-full bg-zinc-700" />
-                </div>
+  {/* File Explorer */}
+  <FileExplorer
+    fileTree={repoData.fileTree}
+  />
+  <ArchitectureMap />
 
-                {/* Terminal Body */}
-                <div className="space-y-5 p-7">
-                  {[
-                    "Repository parsed successfully.",
-                    "README analyzed.",
-                    "Architecture generated.",
-                    "AI insights completed.",
-                  ].map((line, index) => (
-                    <motion.div
-                      key={line}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{
-                        delay: index * 0.2,
-                      }}
-                      className="mono flex items-center gap-4 text-sm uppercase tracking-[0.18em] text-zinc-500"
-                    >
-                      <span className="text-[#f5d90a]">
-                        {">"}
-                      </span>
+  <DependencyGraph
+  dependencies={repoData.dependencies}
+/>
 
-                      <span>{line}</span>
-                    </motion.div>
-                  ))}
-                </div>
-              </div>
-            </div>
+  {/* Terminal */}
+  <div className="border border-white/5 bg-black">
+    {/* Terminal Header */}
+    <div className="flex items-center gap-2 border-b border-white/5 px-5 py-4">
+      <div className="h-2 w-2 rounded-full bg-zinc-700" />
+      <div className="h-2 w-2 rounded-full bg-zinc-700" />
+      <div className="h-2 w-2 rounded-full bg-zinc-700" />
+    </div>
+
+    {/* Terminal Body */}
+    <div className="space-y-5 p-7">
+      {[
+        "Repository parsed successfully.",
+        "README analyzed.",
+        "Architecture generated.",
+        "AI insights completed.",
+      ].map((line, index) => (
+        <motion.div
+          key={line}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{
+            delay: index * 0.2,
+          }}
+          className="mono flex items-center gap-4 text-sm uppercase tracking-[0.18em] text-zinc-500"
+        >
+          <span className="text-[#f5d90a]">
+            {">"}
+          </span>
+
+          <span>{line}</span>
+        </motion.div>
+      ))}
+    </div>
+  </div>
+</div>
 
             {/* RIGHT */}
             <div className="space-y-6">
               {/* Languages */}
               <div className="border border-white/5 bg-black p-8">
                 <p className="mono mb-6 text-xs uppercase tracking-[0.22em] text-zinc-600">
-                  Languages
+                  LANGUAGES
                 </p>
 
                 <div className="flex flex-wrap gap-3">
-                  {repoData.languages.map((lang) => (
+                  {repoData.languages?.map((lang) => (
                     <div
                       key={lang}
                       className="mono border border-white/5 px-5 py-3 text-xs uppercase tracking-[0.18em] text-zinc-400"
@@ -128,6 +150,30 @@ const DashboardPage = () => {
                       {lang}
                     </div>
                   ))}
+                </div>
+              </div>
+
+              {/* Frameworks */}
+              <div className="border border-white/5 bg-black p-8">
+                <p className="mono mb-6 text-xs uppercase tracking-[0.22em] text-zinc-600">
+                  FRAMEWORKS
+                </p>
+
+                <div className="flex flex-wrap gap-3">
+                  {repoData.frameworks?.length > 0 ? (
+                    repoData.frameworks.map((framework) => (
+                      <div
+                        key={framework}
+                        className="mono border border-white/5 bg-[#080808] px-5 py-3 text-xs uppercase tracking-[0.18em] text-zinc-400"
+                      >
+                        {framework}
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-sm text-zinc-600">
+                      No frameworks detected.
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -158,7 +204,7 @@ const DashboardPage = () => {
                 </div>
               </div>
 
-              {/* Repo Link */}
+              {/* Source */}
               <div className="border border-white/5 bg-black p-8">
                 <p className="mono mb-6 text-xs uppercase tracking-[0.22em] text-zinc-600">
                   SOURCE
