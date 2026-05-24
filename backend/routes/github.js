@@ -1,6 +1,7 @@
 import express from "express";
 import axios from "axios";
 import OpenAI from "openai";
+
 import RepositorySession from "../models/RepositorySession.js";
 
 const router = express.Router();
@@ -39,7 +40,8 @@ router.post("/analyze", async (req, res) => {
         `https://raw.githubusercontent.com/${owner}/${repo}/main/README.md`
       );
 
-      readmeText = readmeRes.data.slice(0, 4000);
+      readmeText =
+        readmeRes.data.slice(0, 4000);
     } catch {
       readmeText = "README not found.";
     }
@@ -60,7 +62,8 @@ router.post("/analyze", async (req, res) => {
     // Dependencies
     const dependencies = {
       ...(packageJson.dependencies || {}),
-      ...(packageJson.devDependencies || {}),
+      ...(packageJson.devDependencies ||
+        {}),
     };
 
     const dependencyList = Object.keys(
@@ -83,13 +86,19 @@ router.post("/analyze", async (req, res) => {
       detectedFrameworks.push("Express");
 
     if (dependencies.tailwindcss)
-      detectedFrameworks.push("Tailwind");
+      detectedFrameworks.push(
+        "Tailwind"
+      );
 
     if (dependencies.mongodb)
-      detectedFrameworks.push("MongoDB");
+      detectedFrameworks.push(
+        "MongoDB"
+      );
 
     if (dependencies.typescript)
-      detectedFrameworks.push("TypeScript");
+      detectedFrameworks.push(
+        "TypeScript"
+      );
 
     // File Tree
     let fileTree = [];
@@ -100,7 +109,7 @@ router.post("/analyze", async (req, res) => {
       );
 
       fileTree = treeRes.data.tree
-        .slice(0, 80)
+        .slice(0, 120)
         .map((item) => ({
           path: item.path,
           type: item.type,
@@ -109,21 +118,70 @@ router.post("/analyze", async (req, res) => {
       fileTree = [];
     }
 
+    // Metrics Engine
+    const totalFiles = fileTree.length;
+
+    const totalDependencies =
+      dependencyList.length;
+
+    const architectureScore =
+      Math.min(
+        95,
+        60 +
+          detectedFrameworks.length * 5 +
+          totalDependencies * 0.4
+      );
+
+    const maintainabilityScore =
+      Math.min(
+        95,
+        70 +
+          detectedFrameworks.length * 3
+      );
+
+    const complexityScore =
+      Math.min(
+        95,
+        40 +
+          totalFiles * 0.5 +
+          totalDependencies * 0.4
+      );
+
+    const repositoryMetrics = {
+      totalFiles,
+
+      totalDependencies,
+
+      architectureScore:
+        Math.round(
+          architectureScore
+        ),
+
+      maintainabilityScore:
+        Math.round(
+          maintainabilityScore
+        ),
+
+      complexityScore:
+        Math.round(complexityScore),
+    };
+
     // AI Analysis
     const completion =
-      await openai.chat.completions.create({
-        model: "gpt-4.1-mini",
+      await openai.chat.completions.create(
+        {
+          model: "gpt-4.1-mini",
 
-        messages: [
-          {
-            role: "system",
-            content:
-              "You are an expert software architect analyzing GitHub repositories.",
-          },
+          messages: [
+            {
+              role: "system",
+              content:
+                "You are an expert software architect analyzing GitHub repositories.",
+            },
 
-          {
-            role: "user",
-            content: `
+            {
+              role: "user",
+              content: `
 Repository Name:
 ${repoRes.data.name}
 
@@ -131,7 +189,9 @@ Description:
 ${repoRes.data.description}
 
 Languages:
-${Object.keys(langRes.data).join(", ")}
+${Object.keys(
+  langRes.data
+).join(", ")}
 
 Frameworks:
 ${detectedFrameworks.join(", ")}
@@ -148,62 +208,101 @@ Analyze this repository and provide:
 3. Complexity Level
 4. Best Practices
 5. Improvement Suggestions
-            `,
-          },
-        ],
-      });
+              `,
+            },
+          ],
+        }
+      );
 
     const aiAnalysis =
       completion.choices[0].message.content;
 
-      const session =
-  await RepositorySession.create({
-    repoName: repoRes.data.name,
+    // Session
+    const session =
+      await RepositorySession.create({
+        repoName:
+          repoRes.data.name,
 
-    repoUrl,
+        repoUrl,
 
-    repoData: {
-      name: repoRes.data.name,
-      description: repoRes.data.description,
-      stars: repoRes.data.stargazers_count,
-      forks: repoRes.data.forks_count,
-      language: repoRes.data.language,
-      owner: repoRes.data.owner.login,
+        repoData: {
+          name: repoRes.data.name,
 
-      languages: Object.keys(langRes.data),
+          description:
+            repoRes.data.description,
 
-      frameworks: detectedFrameworks,
+          stars:
+            repoRes.data
+              .stargazers_count,
 
-      dependencies: dependencyList,
+          forks:
+            repoRes.data.forks_count,
 
-      fileTree,
+          language:
+            repoRes.data.language,
 
-      aiAnalysis,
-    },
+          owner:
+            repoRes.data.owner.login,
 
-    chatHistory: [],
-  });
+          languages:
+            Object.keys(
+              langRes.data
+            ),
+
+          frameworks:
+            detectedFrameworks,
+
+          dependencies:
+            dependencyList,
+
+          fileTree,
+
+          metrics:
+            repositoryMetrics,
+
+          aiAnalysis,
+        },
+
+        chatHistory: [],
+      });
 
     // Response
     res.json({
+      sessionId: session._id,
+
       name: repoRes.data.name,
-      description: repoRes.data.description,
-      stars: repoRes.data.stargazers_count,
-      forks: repoRes.data.forks_count,
-      language: repoRes.data.language,
-      owner: repoRes.data.owner.login,
 
-      languages: Object.keys(langRes.data),
+      description:
+        repoRes.data.description,
 
-      frameworks: detectedFrameworks,
+      stars:
+        repoRes.data
+          .stargazers_count,
 
-      dependencies: dependencyList,
+      forks:
+        repoRes.data.forks_count,
+
+      language:
+        repoRes.data.language,
+
+      owner:
+        repoRes.data.owner.login,
+
+      languages:
+        Object.keys(langRes.data),
+
+      frameworks:
+        detectedFrameworks,
+
+      dependencies:
+        dependencyList,
 
       fileTree,
 
-      repoUrl,
+      metrics:
+        repositoryMetrics,
 
-      sessionId: session._id,
+      repoUrl,
 
       aiAnalysis,
     });
@@ -211,7 +310,8 @@ Analyze this repository and provide:
     console.log(error);
 
     res.status(500).json({
-      message: "Failed to analyze repository",
+      message:
+        "Failed to analyze repository",
     });
   }
 });
