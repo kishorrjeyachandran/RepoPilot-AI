@@ -1,49 +1,30 @@
 import express from "express";
-import OpenAI from "openai";
-
-import RepositorySession from "../models/RepositorySession.js";
+import { GoogleGenAI } from "@google/genai";
 
 const router = express.Router();
 
 router.post("/", async (req, res) => {
-  const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
-  });
-
   try {
     const {
       question,
       repoData,
     } = req.body;
 
-    // Find existing session
-    const session =
-      await RepositorySession.findById(
-        repoData.sessionId
-      );
+    //
+    // GEMINI
+    //
+    const ai =
+      new GoogleGenAI({
+        apiKey:
+          process.env.GEMINI_API_KEY,
+      });
 
-    // Previous chat context
-    const previousMessages =
-      session?.chatHistory?.map((msg) => ({
-        role: msg.role,
-        content: msg.content,
-      })) || [];
+    //
+    // PROMPT
+    //
+    const prompt = `
+You are an expert AI software architect helping developers understand repositories.
 
-    // AI Completion
-    const completion =
-      await openai.chat.completions.create({
-        model: "gpt-4.1-mini",
-
-        messages: [
-          {
-            role: "system",
-            content:
-              "You are an expert AI software architect helping developers understand repositories.",
-          },
-
-          {
-            role: "user",
-            content: `
 Repository Name:
 ${repoData.name}
 
@@ -61,52 +42,43 @@ ${repoData.dependencies?.join(", ")}
 
 AI Analysis:
 ${repoData.aiAnalysis}
-            `,
-          },
 
-          // Previous conversation memory
-          ...previousMessages,
+Question:
+${question}
 
-          // Current question
-          {
-            role: "user",
-            content: question,
-          },
-        ],
-      });
+Answer clearly and concisely.
+Keep response under 150 words.
+    `;
 
-    const answer =
-      completion.choices[0].message.content;
+    //
+    // GENERATE RESPONSE
+    //
+    const response =
+      await ai.models.generateContent(
+        {
+          model:
+            "gemini-2.0-flash",
 
-    // Save chat history
-    await RepositorySession.findByIdAndUpdate(
-      repoData.sessionId,
-      {
-        $push: {
-          chatHistory: [
-            {
-              role: "user",
-              content: question,
-            },
+          contents: prompt,
+        }
+      );
 
-            {
-              role: "assistant",
-              content: answer,
-            },
-          ],
-        },
-      }
-    );
-
-    // Response
+    //
+    // RESPONSE
+    //
     res.json({
-      answer,
+      answer: response.text,
     });
   } catch (error) {
+    console.log(
+      "CHAT ERROR:"
+    );
+
     console.log(error);
 
     res.status(500).json({
-      message: "Failed to generate response",
+      message:
+        "Failed to generate response",
     });
   }
 });

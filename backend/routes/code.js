@@ -1,55 +1,73 @@
 import express from "express";
-import OpenAI from "openai";
+import { GoogleGenAI } from "@google/genai";
 
 const router = express.Router();
 
 router.post("/analyze", async (req, res) => {
-  const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
-  });
-
   try {
     const {
       filePath,
       codeContent,
     } = req.body;
 
-    const completion =
-      await openai.chat.completions.create({
-        model: "gpt-4.1-mini",
-
-        messages: [
-          {
-            role: "system",
-            content:
-              "You are an expert senior software engineer explaining codebases.",
-          },
-
-          {
-            role: "user",
-            content: `
-File:
-${filePath}
-
-Code:
-${codeContent}
-
-Analyze this code and explain:
-1. Purpose
-2. Architecture role
-3. Important logic
-4. Potential improvements
-5. Complexity level
-            `,
-          },
-        ],
+    //
+    // GEMINI
+    //
+    const ai =
+      new GoogleGenAI({
+        apiKey:
+          process.env.GEMINI_API_KEY,
       });
 
+    //
+    // PROMPT
+    //
+    const prompt = `
+You are an expert software architect.
+
+Analyze this source code.
+
+FILE:
+${filePath}
+
+CODE:
+${codeContent}
+
+Provide:
+1. Purpose
+2. Architecture
+3. Logic Flow
+4. Code Quality
+5. Improvements
+
+Keep response under 150 words.
+    `;
+
+    //
+    // GENERATE ANALYSIS
+    //
+    const response =
+      await ai.models.generateContent(
+        {
+          model:
+            "gemini-2.0-flash",
+
+          contents: prompt,
+        }
+      );
+
+    //
+    // RESPONSE
+    //
     res.json({
       analysis:
-        completion.choices[0].message.content,
+        response.text,
     });
   } catch (error) {
+    console.log(
+      "CODE ANALYSIS ERROR:"
+    );
+
     console.log(error);
 
     res.status(500).json({

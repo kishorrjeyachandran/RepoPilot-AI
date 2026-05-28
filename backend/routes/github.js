@@ -1,38 +1,109 @@
+// backend/routes/github.js
+
 import express from "express";
 import axios from "axios";
-import OpenAI from "openai";
-
-import RepositorySession from "../models/RepositorySession.js";
+import { GoogleGenAI } from "@google/genai";
 
 const router = express.Router();
 
 router.post("/analyze", async (req, res) => {
-  const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
-  });
-
   try {
+    //
+    // REPOSITORY URL
+    //
     const { repoUrl } = req.body;
 
-    // Parse URL
-    const parts = repoUrl
-      .replace("https://github.com/", "")
-      .split("/");
+    if (!repoUrl) {
+      return res.status(400).json({
+        message:
+          "Repository URL is required",
+      });
+    }
+
+    //
+    // PARSE GITHUB URL
+    //
+    const cleaned = repoUrl
+      .replace(
+        "https://github.com/",
+        ""
+      )
+      .replace(".git", "");
+
+    const parts = cleaned.split("/");
 
     const owner = parts[0];
     const repo = parts[1];
 
-    // Repository Info
+    //
+    // GITHUB HEADERS
+    //
+    const headers = {};
+
+    if (process.env.GITHUB_TOKEN) {
+      headers.Authorization = `Bearer ${process.env.GITHUB_TOKEN}`;
+    }
+
+    //
+    // REPOSITORY DATA
+    //
     const repoRes = await axios.get(
-      `https://api.github.com/repos/${owner}/${repo}`
+      `https://api.github.com/repos/${owner}/${repo}`,
+      { headers }
     );
 
-    // Languages
+    const repoData =
+      repoRes.data;
+
+    //
+    // LANGUAGES
+    //
     const langRes = await axios.get(
-      `https://api.github.com/repos/${owner}/${repo}/languages`
+      `https://api.github.com/repos/${owner}/${repo}/languages`,
+      { headers }
     );
 
+    const languages = Object.keys(
+      langRes.data || {}
+    );
+
+    //
+    // FILE TREE
+    //
+    let fileTree = [];
+
+    try {
+      const treeRes = await axios.get(
+        `https://api.github.com/repos/${owner}/${repo}/git/trees/HEAD?recursive=1`,
+        { headers }
+      );
+
+      fileTree =
+        treeRes.data?.tree?.map(
+          (item) => ({
+            path: item.path,
+            type: item.type,
+          })
+        ) || [];
+
+      //
+      // LIMIT FILES
+      //
+      fileTree =
+        fileTree.slice(0, 200);
+    } catch (treeError) {
+      console.log(
+        "TREE ERROR:"
+      );
+
+      console.log(
+        treeError.message
+      );
+    }
+
+    //
     // README
+    //
     let readmeText = "";
 
     try {
@@ -41,12 +112,37 @@ router.post("/analyze", async (req, res) => {
       );
 
       readmeText =
-        readmeRes.data.slice(0, 4000);
+        typeof readmeRes.data ===
+        "string"
+          ? readmeRes.data.slice(
+              0,
+              1000
+            )
+          : "";
     } catch {
-      readmeText = "README not found.";
+      try {
+        const readmeRes =
+          await axios.get(
+            `https://raw.githubusercontent.com/${owner}/${repo}/master/README.md`
+          );
+
+        readmeText =
+          typeof readmeRes.data ===
+          "string"
+            ? readmeRes.data.slice(
+                0,
+                1000
+              )
+            : "";
+      } catch {
+        readmeText =
+          "README not found.";
+      }
     }
 
+    //
     // PACKAGE.JSON
+    //
     let packageJson = {};
 
     try {
@@ -54,259 +150,276 @@ router.post("/analyze", async (req, res) => {
         `https://raw.githubusercontent.com/${owner}/${repo}/main/package.json`
       );
 
-      packageJson = packageRes.data;
+      packageJson =
+        typeof packageRes.data ===
+        "string"
+          ? JSON.parse(
+              packageRes.data
+            )
+          : packageRes.data;
     } catch {
-      packageJson = {};
+      try {
+        const packageRes =
+          await axios.get(
+            `https://raw.githubusercontent.com/${owner}/${repo}/master/package.json`
+          );
+
+        packageJson =
+          typeof packageRes.data ===
+          "string"
+            ? JSON.parse(
+                packageRes.data
+              )
+            : packageRes.data;
+      } catch {
+        packageJson = {};
+      }
     }
 
-    // Dependencies
+    //
+    // DEPENDENCIES
+    //
     const dependencies = {
-      ...(packageJson.dependencies || {}),
+      ...(packageJson.dependencies ||
+        {}),
       ...(packageJson.devDependencies ||
         {}),
     };
 
     const dependencyList = Object.keys(
       dependencies
-    ).slice(0, 40);
+    ).slice(0, 15);
 
-    // Framework Detection
-    const detectedFrameworks = [];
+    //
+    // FRAMEWORK DETECTION
+    //
+    const frameworks = [];
 
     if (dependencies.react)
-      detectedFrameworks.push("React");
+      frameworks.push("React");
 
     if (dependencies.next)
-      detectedFrameworks.push("Next.js");
+      frameworks.push("Next.js");
 
     if (dependencies.vue)
-      detectedFrameworks.push("Vue");
+      frameworks.push("Vue");
+
+    if (dependencies.angular)
+      frameworks.push("Angular");
 
     if (dependencies.express)
-      detectedFrameworks.push("Express");
-
-    if (dependencies.tailwindcss)
-      detectedFrameworks.push(
-        "Tailwind"
-      );
+      frameworks.push("Express");
 
     if (dependencies.mongodb)
-      detectedFrameworks.push(
+      frameworks.push(
         "MongoDB"
       );
 
+    if (dependencies.mongoose)
+      frameworks.push(
+        "Mongoose"
+      );
+
+    if (dependencies.tailwindcss)
+      frameworks.push(
+        "Tailwind"
+      );
+
     if (dependencies.typescript)
-      detectedFrameworks.push(
+      frameworks.push(
         "TypeScript"
       );
 
-    // File Tree
-    let fileTree = [];
+    if (dependencies.vite)
+      frameworks.push("Vite");
 
-    try {
-      const treeRes = await axios.get(
-        `https://api.github.com/repos/${owner}/${repo}/git/trees/main?recursive=1`
-      );
+    //
+    // METRICS
+    //
+    const metrics = {
+      totalFiles:
+        fileTree.length,
 
-      fileTree = treeRes.data.tree
-        .slice(0, 120)
-        .map((item) => ({
-          path: item.path,
-          type: item.type,
-        }));
-    } catch {
-      fileTree = [];
-    }
-
-    // Metrics Engine
-    const totalFiles = fileTree.length;
-
-    const totalDependencies =
-      dependencyList.length;
-
-    const architectureScore =
-      Math.min(
-        95,
-        60 +
-          detectedFrameworks.length * 5 +
-          totalDependencies * 0.4
-      );
-
-    const maintainabilityScore =
-      Math.min(
-        95,
-        70 +
-          detectedFrameworks.length * 3
-      );
-
-    const complexityScore =
-      Math.min(
-        95,
-        40 +
-          totalFiles * 0.5 +
-          totalDependencies * 0.4
-      );
-
-    const repositoryMetrics = {
-      totalFiles,
-
-      totalDependencies,
+      totalDependencies:
+        dependencyList.length,
 
       architectureScore:
         Math.round(
-          architectureScore
+          Math.min(
+            95,
+            60 +
+              frameworks.length *
+                5 +
+              dependencyList.length *
+                0.4
+          )
         ),
 
       maintainabilityScore:
         Math.round(
-          maintainabilityScore
+          Math.min(
+            95,
+            70 +
+              frameworks.length *
+                3
+          )
         ),
 
       complexityScore:
-        Math.round(complexityScore),
+        Math.round(
+          Math.min(
+            95,
+            40 +
+              fileTree.length *
+                0.3 +
+              dependencyList.length *
+                0.5
+          )
+        ),
     };
 
-    // AI Analysis
-    const completion =
-      await openai.chat.completions.create(
-        {
-          model: "gpt-4.1-mini",
+    //
+    // GEMINI ANALYSIS
+    //
+    let aiAnalysis =
+      "AI analysis unavailable.";
 
-          messages: [
-            {
-              role: "system",
-              content:
-                "You are an expert software architect analyzing GitHub repositories.",
-            },
+    try {
+      console.log(
+        "GEMINI STARTING"
+      );
 
-            {
-              role: "user",
-              content: `
-Repository Name:
-${repoRes.data.name}
+      console.log(
+        "API KEY EXISTS:",
+        !!process.env
+          .GEMINI_API_KEY
+      );
+
+      //
+      // GEMINI CLIENT
+      //
+      const ai =
+        new GoogleGenAI({
+          apiKey:
+            process.env
+              .GEMINI_API_KEY,
+        });
+
+      //
+      // SHORT PROMPT
+      //
+      const prompt = `
+Repository:
+${repoData.full_name}
 
 Description:
-${repoRes.data.description}
+${repoData.description}
 
 Languages:
-${Object.keys(
-  langRes.data
-).join(", ")}
+${languages.join(", ")}
 
 Frameworks:
-${detectedFrameworks.join(", ")}
+${frameworks.join(", ")}
 
 Dependencies:
 ${dependencyList.join(", ")}
 
-README:
-${readmeText}
+Give:
+- architecture overview
+- scalability
+- code quality
+- improvements
 
-Analyze this repository and provide:
-1. Project Summary
-2. Architecture Explanation
-3. Complexity Level
-4. Best Practices
-5. Improvement Suggestions
-              `,
-            },
-          ],
-        }
+Keep under 80 words.
+      `;
+
+      //
+      // GENERATE CONTENT
+      //
+      const response =
+        await ai.models.generateContent(
+          {
+            model:
+              "gemini-2.0-flash",
+
+            contents: prompt,
+          }
+        );
+
+      //
+      // RESPONSE
+      //
+      aiAnalysis =
+        response.text;
+
+      console.log(
+        "GEMINI SUCCESS"
+      );
+    } catch (geminiError) {
+      console.log(
+        "GEMINI ERROR:"
       );
 
-    const aiAnalysis =
-      completion.choices[0].message.content;
+      console.log(
+        geminiError
+      );
 
-    // Session
-    const session =
-      await RepositorySession.create({
-        repoName:
-          repoRes.data.name,
+      //
+      // QUOTA ERROR
+      //
+      if (
+        geminiError.status ===
+        429
+      ) {
+        aiAnalysis =
+          "AI quota exceeded. Try again shortly.";
+      } else {
+        aiAnalysis =
+          "AI analysis unavailable.";
+      }
+    }
 
-        repoUrl,
-
-        repoData: {
-          name: repoRes.data.name,
-
-          description:
-            repoRes.data.description,
-
-          stars:
-            repoRes.data
-              .stargazers_count,
-
-          forks:
-            repoRes.data.forks_count,
-
-          language:
-            repoRes.data.language,
-
-          owner:
-            repoRes.data.owner.login,
-
-          languages:
-            Object.keys(
-              langRes.data
-            ),
-
-          frameworks:
-            detectedFrameworks,
-
-          dependencies:
-            dependencyList,
-
-          fileTree,
-
-          metrics:
-            repositoryMetrics,
-
-          aiAnalysis,
-        },
-
-        chatHistory: [],
-      });
-
-    // Response
+    //
+    // FINAL RESPONSE
+    //
     res.json({
-      sessionId: session._id,
+      repoUrl,
 
-      name: repoRes.data.name,
+      name: repoData.name,
 
       description:
-        repoRes.data.description,
+        repoData.description,
 
       stars:
-        repoRes.data
-          .stargazers_count,
+        repoData.stargazers_count,
 
       forks:
-        repoRes.data.forks_count,
+        repoData.forks_count,
 
       language:
-        repoRes.data.language,
+        repoData.language,
 
       owner:
-        repoRes.data.owner.login,
+        repoData.owner.login,
 
-      languages:
-        Object.keys(langRes.data),
+      languages,
 
-      frameworks:
-        detectedFrameworks,
+      frameworks,
 
       dependencies:
         dependencyList,
 
       fileTree,
 
-      metrics:
-        repositoryMetrics,
-
-      repoUrl,
+      metrics,
 
       aiAnalysis,
     });
   } catch (error) {
+    console.log(
+      "ANALYZE ERROR:"
+    );
+
     console.log(error);
 
     res.status(500).json({
