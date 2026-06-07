@@ -50,7 +50,7 @@ Keep response under 150 words.
       await ai.models.generateContent(
         {
           model:
-            "gemini-2.0-flash",
+            "gemini-2.0-flash-001",
 
           contents: prompt,
         }

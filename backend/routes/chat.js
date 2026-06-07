@@ -1,86 +1,119 @@
 import express from "express";
-import { GoogleGenAI } from "@google/genai";
+import {
+  chatWithFallback,
+} from "../utils/aiManager.js";
+import {
+  generateStaticResponse,
+} from "../utils/staticEngine.js";
 
 const router = express.Router();
 
-router.post("/", async (req, res) => {
+/**
+ * Chat endpoint - supports conversational interactions
+ * Falls back to static responses if AI unavailable
+ */
+router.post("/message", async (req, res) => {
   try {
     const {
       question,
       repoData,
+      fileTree = [],
+      readme = "",
     } = req.body;
 
-    //
-    // GEMINI
-    //
-    const ai =
-      new GoogleGenAI({
-        apiKey:
-          process.env.GEMINI_API_KEY,
+    if (!question || !repoData) {
+      return res.status(400).json({
+        error: "Question and repoData required",
       });
+    }
 
     //
-    // PROMPT
-    //
-    const prompt = `
-You are an expert AI software architect helping developers understand repositories.
-
-Repository Name:
-${repoData.name}
-
-Description:
-${repoData.description}
-
-Languages:
-${repoData.languages?.join(", ")}
-
-Frameworks:
-${repoData.frameworks?.join(", ")}
-
-Dependencies:
-${repoData.dependencies?.join(", ")}
-
-AI Analysis:
-${repoData.aiAnalysis}
-
-Question:
-${question}
-
-Answer clearly and concisely.
-Keep response under 150 words.
-    `;
-
-    //
-    // GENERATE RESPONSE
+    // GET RESPONSE (with fallback)
     //
     const response =
-      await ai.models.generateContent(
-        {
-          model:
-            "gemini-2.0-flash",
-
-          contents: prompt,
-        }
+      await chatWithFallback(
+        question,
+        repoData,
+        repoData.frameworks || [],
+        repoData.dependencies || [],
+        fileTree,
+        readme
       );
 
     //
-    // RESPONSE
+    // RETURN RESPONSE
     //
     res.json({
-      answer: response.text,
+      type: response.type,
+      answer: response.answer,
+      isAI: response.type === "ai",
     });
   } catch (error) {
-    console.log(
-      "CHAT ERROR:"
+    console.error(
+      "Chat error:",
+      error
     );
 
-    console.log(error);
-
-    res.status(500).json({
-      message:
-        "Failed to generate response",
+    // Ultimate fallback - static response
+    res.json({
+      type: "static",
+      answer:
+        "Unable to process question. Try asking about the tech stack or architecture.",
+      isAI: false,
     });
   }
 });
+
+/**
+ * Get suggested prompts for a repository
+ */
+router.post(
+  "/suggested-prompts",
+  async (req, res) => {
+    try {
+      const { repoData } = req.body;
+
+      const prompts = [
+        {
+          text: "Explain project architecture",
+          icon: "GitBranch",
+        },
+        {
+          text: "What frameworks are used?",
+          icon: "Layers",
+        },
+        {
+          text: "How does authentication work?",
+          icon: "Lock",
+        },
+        {
+          text: "Show important files",
+          icon: "FileText",
+        },
+        {
+          text: "Explain folder structure",
+          icon: "FolderOpen",
+        },
+        {
+          text: "What's the tech stack?",
+          icon: "Code",
+        },
+      ];
+
+      res.json({
+        prompts,
+      });
+    } catch (error) {
+      console.error(
+        "Prompts error:",
+        error
+      );
+
+      res.status(500).json({
+        error: "Failed to get prompts",
+      });
+    }
+  }
+);
 
 export default router;
