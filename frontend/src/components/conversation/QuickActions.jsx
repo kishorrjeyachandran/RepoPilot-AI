@@ -1,43 +1,117 @@
+import { useState } from "react";
+
+import ChatInput from "./ChatInput";
+import MessageBubble from "./MessageBubble";
+
+import {
+  answerQuestion,
+} from "../../services/repositoryAssistant";
+
 const actions = [
   "Explain architecture",
-  "How authentication works?",
-  "Explain backend flow",
-  "Find API routes",
   "Important files",
+  "Dependencies",
   "Folder structure",
+  "Backend flow",
+  "Authentication",
 ];
 
-const QuickActions =
-  () => {
-    return (
-      <div>
+const QuickActions = ({
+  repoData,
+}) => {
+  const [messages, setMessages] =
+    useState([]);
 
-        <h2 className="mb-8 text-3xl font-semibold">
-          Repository loaded.
+  const askQuestion =
+    async (question) => {
+      const reply =
+        await answerQuestion(
+          question
+        );
+
+      setMessages(
+        (prev) => [
+          ...prev,
+          {
+            role: "user",
+            content:
+              question,
+          },
+          {
+            role:
+              "assistant",
+            content: reply,
+          },
+        ]
+      );
+    };
+
+  return (
+    <div className="mt-12">
+
+      <div className="mb-10 border border-white/5 bg-white/[0.02] p-6">
+
+        <h2 className="text-4xl font-semibold">
+          {repoData.name}
         </h2>
 
-        <p className="mb-10 text-zinc-500">
-          What would you like
-          to understand?
+        <p className="mt-4 text-zinc-500">
+          {
+            repoData.description
+          }
         </p>
 
-        <div className="grid gap-4 md:grid-cols-2">
+      </div>
 
-          {actions.map(
-            (action) => (
-              <button
-                key={action}
-                className="border border-white/5 bg-white/[0.02] p-5 text-left transition hover:border-white/10 hover:bg-white/[0.04]"
-              >
-                {action}
-              </button>
-            )
-          )}
+      <div className="mb-10 flex flex-wrap gap-3">
 
-        </div>
+        {actions.map(
+          (action) => (
+            <button
+              key={action}
+              onClick={() =>
+                askQuestion(
+                  action
+                )
+              }
+              className="border border-white/5 px-4 py-3 transition hover:border-white/15"
+            >
+              {action}
+            </button>
+          )
+        )}
 
       </div>
-    );
-  };
+
+      <div className="space-y-4">
+
+        {messages.map(
+          (
+            message,
+            index
+          ) => (
+            <MessageBubble
+              key={index}
+              role={
+                message.role
+              }
+              content={
+                message.content
+              }
+            />
+          )
+        )}
+
+      </div>
+
+      <ChatInput
+        onSend={
+          askQuestion
+        }
+      />
+
+    </div>
+  );
+};
 
 export default QuickActions;
